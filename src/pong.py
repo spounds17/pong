@@ -2,10 +2,19 @@ import math, pygame, sys
 from pygame.locals import *
 
 import os, sys, inspect
-src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
-lib_dir = os.path.abspath(os.path.join(src_dir,'../lib'))
 
-sys.path.insert(0, lib_dir)
+print os.name
+if os.name == 'nt': # Windows    
+    print "Windows OS detected"
+    src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    lib_dir= '../lib/x64' if sys.maxsize > 2**32 else '../lib/x86'
+    sys.path.insert(0, os.path.abspath(os.path.join(src_dir, lib_dir)))    
+else:
+    print "MAC OS detected"
+    src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    lib_dir = os.path.abspath(os.path.join(src_dir,'../lib'))    
+    sys.path.insert(0, lib_dir)
+    
 import time, thread
 import Leap
 
