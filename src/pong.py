@@ -27,6 +27,9 @@ RIGHT_HAND_Y_OFFSET = 200.0
 
 HAND_OFFSET = 150.0
 
+LEFT_HAND_X_OFFSET = -200.0
+LEFT_HAND_Y_OFFSET = 100.0
+
 RIGHT = WINDOW_HEIGHT/HAND_OFFSET * 2
 LEFT = -WINDOW_HEIGHT/HAND_OFFSET * 2
 UP = -WINDOW_HEIGHT/HAND_OFFSET * 2
@@ -82,7 +85,7 @@ def checkEdgeCollision(ball, ballDirX, ballDirY):
 
 def checkHitBall(ball, paddle1, paddle2, ballDirX):
     if ball.colliderect(paddle1):
-       return -1
+        return -1
     if ball.colliderect(paddle2):
         return -1
     return 1
@@ -98,14 +101,14 @@ def checkPointScored(ball, score1, score2, ballDirX):
 
 
 def displayScore(score1, score2):
-    resultSurf1 = BASIC_FONT.render('Score = %s' %(score1), True, WHITE)
+    resultSurf1 = BASIC_FONT.render('Left Hand = %s' %(score1), True, WHITE)
     resultRect1 = resultSurf1.get_rect()
     resultRect1.topleft = (35, 35)
     DISPLAY_SURF.blit(resultSurf1, resultRect1)
 
-    resultSurf2 = BASIC_FONT.render('Score = %s' %(score2), True, WHITE)
+    resultSurf2 = BASIC_FONT.render('Right Hand = %s' %(score2), True, WHITE)
     resultRect2 = resultSurf2.get_rect()
-    resultRect2.topleft = (WINDOW_WIDTH - 130, 35)
+    resultRect2.topleft = (WINDOW_WIDTH - 170, 35)
     DISPLAY_SURF.blit(resultSurf2, resultRect2)
 
 
@@ -171,8 +174,8 @@ def main():
                     #we are player 1
                     position = hand.palm_position
                     #print "positiony1 is %s" %(position.y-HAND_OFFSET)
-                    deltaY = (position.y) 
-                    deltaX = (position.x) 
+                    deltaX = (position.y-LEFT_HAND_Y_OFFSET) 
+                    deltaY = (-position.x-LEFT_HAND_X_OFFSET) 
                     movePaddle(playerOnePaddle, deltaX, deltaY)
                     
                 else:
@@ -180,7 +183,7 @@ def main():
                     position = hand.palm_position
                     #print "positiony2 is %s" %(position.y-HAND_OFFSET)
                     deltaY = (position.y-RIGHT_HAND_Y_OFFSET) 
-                    deltaX = (position.x-RIGHT_HAND_X_OFFSET) 
+                    deltaX = (-position.x-RIGHT_HAND_X_OFFSET) 
                     movePaddle(playerTwoPaddle, deltaY, deltaX)
 
 
