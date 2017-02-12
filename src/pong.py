@@ -1,79 +1,97 @@
+#import needed files, you must have pygame and python 2.7 installed for this game to work
 import math, pygame, sys
 from pygame.locals import *
-
 import os, sys, inspect
+import time, thread
 
-print os.name
-if os.name == 'nt': # Windows    
+# Determine OS before importing Leap. Windows systems have to support both x86 and x64 so the folder structure
+# has to be loaded differently from MAC. 
+# Leap documentation: https://developer.leapmotion.com/documentation/python/devguide/Project_Setup.html
+
+# nt = Windows machine
+if os.name == 'nt':   
     print "Windows OS detected"
     src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
     lib_dir= '../lib/x64' if sys.maxsize > 2**32 else '../lib/x86'
-    sys.path.insert(0, os.path.abspath(os.path.join(src_dir, lib_dir)))    
+    sys.path.insert(0, os.path.abspath(os.path.join(src_dir, lib_dir)))   
+#else machine = linux or mac
 else:
-    print "MAC OS detected"
+    print "MAC/Linux OS detected"
     src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
     lib_dir = os.path.abspath(os.path.join(src_dir,'../lib'))    
     sys.path.insert(0, lib_dir)
     
-import time, thread
+#Once OS is determined and file structure loaded, import Leap
 import Leap
+from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 
+timer = time.time() + 1*.1   # .1 seconds
 
+#Create GUI sizes
 WINDOW_WIDTH = 1250
 WINDOW_HEIGHT = 700
 LINE_THICKNESS = 10
 PADDLE_SIZE = 150
 PADDLE_OFFSET = 60
+PADDLE_BUFFER = 15
 
+#Create color variables
 GREEN = (34,139,34)
 WHITE = (255,255,255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 
-
-RIGHT_HAND_X_OFFSET = 750.0
-RIGHT_HAND_Y_OFFSET = 200.0
+#Right hand leap motion offset to keep right hand on the right side of the frame
+RIGHT_HAND_X_OFFSET = 700.0
+RIGHT_HAND_Y_OFFSET = 220.0
 
 HAND_OFFSET = 150.0
 
+#Left hand leap motion offset to keep left hand on the left side of the frame
 LEFT_HAND_X_OFFSET = -200.0
-LEFT_HAND_Y_OFFSET = 100.0
+LEFT_HAND_Y_OFFSET = 250.0
 
 RIGHT = WINDOW_HEIGHT/HAND_OFFSET * 2
 LEFT = -WINDOW_HEIGHT/HAND_OFFSET * 2
 UP = -WINDOW_HEIGHT/HAND_OFFSET * 2
 DOWN = WINDOW_HEIGHT/HAND_OFFSET * 2
 
-def drawArena():
+
+#Utilize pygame and a little math to create pong table
+def drawTable():
     DISPLAY_SURF.fill(GREEN)
     pygame.draw.rect(DISPLAY_SURF, WHITE, ((0,0),
                     (WINDOW_WIDTH, WINDOW_HEIGHT)), LINE_THICKNESS*2 )
     pygame.draw.line(DISPLAY_SURF, WHITE, ((WINDOW_WIDTH/2),0),
                     ((WINDOW_WIDTH/2),WINDOW_HEIGHT), (LINE_THICKNESS/4))
 
-
+#Create paddle boundries and set the color, left hand = red and right hand = blue
 def drawPaddle(paddle, color):
     if paddle.bottom > WINDOW_HEIGHT - LINE_THICKNESS:
             paddle.bottom = WINDOW_HEIGHT - LINE_THICKNESS
     elif paddle.top < LINE_THICKNESS:
         paddle.top = LINE_THICKNESS
+    elif paddle.right > WINDOW_WIDTH - LINE_THICKNESS:
+        paddle.right = WINDOW_WIDTH - (LINE_THICKNESS + PADDLE_BUFFER)
+    elif paddle.left < LINE_THICKNESS:
+        paddle.left = LINE_THICKNESS + PADDLE_BUFFER
+    #Setting color of paddles
     if color == "RED":
         pygame.draw.rect(DISPLAY_SURF, RED, paddle)
-    elif color == "BLUE":
-        pygame.draw.rect(DISPLAY_SURF, BLUE, paddle)
     else:
-        pygame.draw.rect(DISPLAY_SURF, WHITE, paddle)
+        pygame.draw.rect(DISPLAY_SURF, BLUE, paddle)
 
 
-def movePaddle(paddle, deltaY, deltaX):
-   
+
+def movePaddle(paddle, deltaY, deltaX):   
     paddle.y = WINDOW_HEIGHT/2-math.floor(deltaY)
     paddle.x = WINDOW_HEIGHT/2-math.floor(deltaX)
     if paddle.bottom > WINDOW_HEIGHT - LINE_THICKNESS:
             paddle.bottom = WINDOW_HEIGHT - LINE_THICKNESS
     elif paddle.top < LINE_THICKNESS:
         paddle.top = LINE_THICKNESS
-
+        
+#
 def drawBall(ball):
     pygame.draw.rect(DISPLAY_SURF, WHITE, ball)
 
@@ -109,7 +127,7 @@ def checkPointScored(ball, score1, score2, ballDirX):
         return 0
 
 
-def displayScore(score1, score2):
+def displayScore(score1, score2, speed):
     resultSurf1 = BASIC_FONT.render('Left Hand = %s' %(score1), True, WHITE)
     resultRect1 = resultSurf1.get_rect()
     resultRect1.topleft = (35, 35)
@@ -117,8 +135,27 @@ def displayScore(score1, score2):
 
     resultSurf2 = BASIC_FONT.render('Right Hand = %s' %(score2), True, WHITE)
     resultRect2 = resultSurf2.get_rect()
-    resultRect2.topleft = (WINDOW_WIDTH - 170, 35)
+    resultRect2.topleft = (WINDOW_WIDTH - 180, 35)
     DISPLAY_SURF.blit(resultSurf2, resultRect2)
+    
+def displaySpeed(speed):
+    resultSurf3 = BASIC_FONT.render('Speed = %s' %(speed), True, WHITE)
+    resultRect3 = resultSurf3.get_rect()
+    resultRect3.topleft = ((WINDOW_WIDTH/2 - LINE_THICKNESS), 35)
+    DISPLAY_SURF.blit(resultSurf3, resultRect3)    
+    
+def displayPowerup(score1, count1, score2, count2):
+    if(score1 == 1) and (count1 == 1):
+        resultSurf4 = BASIC_FONT.render('Speed Boost Available!', True, RED)
+        resultRect4 = resultSurf4.get_rect()
+        resultRect4.topleft = (350, 50)
+        DISPLAY_SURF.blit(resultSurf4, resultRect4)
+        
+    if(score2 == 1) and (count2 == 1):
+        resultSurf5 = BASIC_FONT.render('Speed Boost Available!', True, BLUE)
+        resultRect5 = resultSurf5.get_rect()
+        resultRect5.topleft = (WINDOW_WIDTH - 470, 50)
+        DISPLAY_SURF.blit(resultSurf5, resultRect5)  
 
 
 def reset():
@@ -127,14 +164,20 @@ def reset():
 
 def main():
     pygame.init()
+    
+    #Create our controller and frame
     controller = Leap.Controller()
     frame = controller.frame()
-    while(not frame.is_valid):
-        frame = controller.frame()
+    
+    #Enable gestures
+    controller.enable_gesture(Leap.Gesture.TYPE_CIRCLE);  
+
+    #while(not frame.is_valid):
+        #frame = controller.frame()
     global DISPLAY_SURF
     global BASIC_FONT, BASIC_FONT_SIZE
-    BASIC_FONT_SIZE = 20
-    BASIC_FONT = pygame.font.Font('freesansbold.ttf', BASIC_FONT_SIZE)
+    BASIC_FONT_SIZE = 30
+    BASIC_FONT = pygame.font.SysFont('helvetica', BASIC_FONT_SIZE)
     DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH,WINDOW_HEIGHT))
     pygame.display.set_caption('Pong')
 
@@ -150,7 +193,9 @@ def main():
     ballDirX = LEFT
     ballDirY = UP
     
-    speed = 1    
+    speed = 1.5
+    count1 = 1
+    count2 = 1
 
     playerOnePaddle = pygame.Rect(PADDLE_OFFSET, playerOnePosition,
                                   LINE_THICKNESS, PADDLE_SIZE)
@@ -159,7 +204,7 @@ def main():
                                   PADDLE_SIZE)
     ball = pygame.Rect(ballx, bally, LINE_THICKNESS, LINE_THICKNESS)
 
-    drawArena()
+    drawTable()
     drawPaddle(playerOnePaddle, "BLUE")
     drawPaddle(playerTwoPaddle, "RED")
     drawBall(ball)
@@ -170,27 +215,51 @@ def main():
                 pygame.quit()
                 sys.exit()
 
-        drawArena()
+        drawTable()
         drawPaddle(playerOnePaddle, "RED")
         drawPaddle(playerTwoPaddle, "BLUE")
         drawBall(ball)
 
         frame = controller.frame()
         if frame.is_valid:
+            displaySpeed(speed)
             for hand in frame.hands:
                 handType = "Left hand" if hand.is_left else "Right hand"
+                
                 if handType == "Left hand":
                     #we are player 1
+                    
+                    for gesture in frame.gestures():
+                        if gesture.type == Leap.Gesture.TYPE_CIRCLE:
+                            circle = CircleGesture(gesture)
+                            
+                            # Determine clock direction using the angle between the pointable and the circle normal
+                            if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI/2) and score1 == 1 and count1 == 1:
+                                print "Left Hand Speed up gesture activated!"                     
+                                speed+=1
+                                print 'Speed', speed
+                                count1 += 1
+                            
                     position = hand.palm_position
-                    #print "positiony1 is %s" %(position.y-HAND_OFFSET)
                     deltaX = (position.y-LEFT_HAND_Y_OFFSET) 
                     deltaY = (-position.x-LEFT_HAND_X_OFFSET) 
                     movePaddle(playerOnePaddle, deltaX, deltaY)
                     
                 else:
                     #we are player 2
+                    
+                    for gesture in frame.gestures():
+                        if gesture.type == Leap.Gesture.TYPE_CIRCLE:
+                            circle = CircleGesture(gesture)
+                                                
+                            # Determine clock direction using the angle between the pointable and the circle normal
+                            if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI/2) and score2 == 1 and count2 == 1:
+                                print "Right Hand Speed up gesture activated!"                     
+                                speed+=1
+                                print 'Speed', speed
+                                count2 += 1             
+                                
                     position = hand.palm_position
-                    #print "positiony2 is %s" %(position.y-HAND_OFFSET)
                     deltaY = (position.y-RIGHT_HAND_Y_OFFSET) 
                     deltaX = (-position.x-RIGHT_HAND_X_OFFSET) 
                     movePaddle(playerTwoPaddle, deltaY, deltaX)
@@ -205,18 +274,19 @@ def main():
         point = checkPointScored(ball, score1, score2, ballDirX)
         if point == 1:
             score1+=1
-            speed +=.3
+            speed = 1.5
             ball.x = WINDOW_WIDTH/2 - LINE_THICKNESS/2
             ball.y = WINDOW_HEIGHT/2 - LINE_THICKNESS/2
         if point == 2:
             score2+=1
-            speed += .3
+            speed = 1.5
             ball.x = WINDOW_WIDTH/2 - LINE_THICKNESS/2
             ball.y = WINDOW_HEIGHT/2 - LINE_THICKNESS/2
-        displayScore(score1, score2)
+        displayScore(score1, score2, speed)
+        displayPowerup(score1, count1, score2, count2)
 
 
         pygame.display.update()
 
 if __name__=='__main__':
-    main()
+        main()
