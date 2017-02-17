@@ -4,6 +4,7 @@ from pygame.locals import *
 import os, sys, inspect
 import time, thread
 
+
 # Determine OS before importing Leap. Windows systems have to support both x86 and x64 so the folder structure
 # has to be loaded differently from MAC. 
 # Leap documentation: https://developer.leapmotion.com/documentation/python/devguide/Project_Setup.html
@@ -24,8 +25,6 @@ else:
 #Once OS is determined and file structure loaded, import Leap
 import Leap
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
-
-timer = time.time() + 1*.1   # .1 seconds
 
 #Create GUI sizes
 WINDOW_WIDTH = 1250
@@ -55,7 +54,6 @@ RIGHT = WINDOW_HEIGHT/HAND_OFFSET * 2
 LEFT = -WINDOW_HEIGHT/HAND_OFFSET * 2
 UP = -WINDOW_HEIGHT/HAND_OFFSET * 2
 DOWN = WINDOW_HEIGHT/HAND_OFFSET * 2
-
 
 #Utilize pygame and a little math to create pong table
 def drawTable():
@@ -128,33 +126,33 @@ def checkPointScored(ball, score1, score2, ballDirX):
 
 
 def displayScore(score1, score2, speed):
-    resultSurf1 = BASIC_FONT.render('Left Hand = %s' %(score1), True, WHITE)
-    resultRect1 = resultSurf1.get_rect()
-    resultRect1.topleft = (35, 35)
-    DISPLAY_SURF.blit(resultSurf1, resultRect1)
+    resultSurface1 = BASIC_FONT.render('Left Hand = %s' %(score1), True, WHITE)
+    resultDisplay1 = resultSurface1.get_rect()
+    resultDisplay1.topleft = (35, 35)
+    DISPLAY_SURF.blit(resultSurface1, resultDisplay1)
 
-    resultSurf2 = BASIC_FONT.render('Right Hand = %s' %(score2), True, WHITE)
-    resultRect2 = resultSurf2.get_rect()
-    resultRect2.topleft = (WINDOW_WIDTH - 180, 35)
-    DISPLAY_SURF.blit(resultSurf2, resultRect2)
+    resultSurface2 = BASIC_FONT.render('Right Hand = %s' %(score2), True, WHITE)
+    resultDisplay2 = resultSurface2.get_rect()
+    resultDisplay2.topleft = (WINDOW_WIDTH - 180, 35)
+    DISPLAY_SURF.blit(resultSurface2, resultDisplay2)
     
 def displaySpeed(speed):
     resultSurf3 = BASIC_FONT.render('Speed = %s' %(speed), True, WHITE)
     resultRect3 = resultSurf3.get_rect()
-    resultRect3.topleft = ((WINDOW_WIDTH/2 - LINE_THICKNESS), 35)
+    resultRect3.topleft = ((WINDOW_WIDTH/2 + 10), 650)
     DISPLAY_SURF.blit(resultSurf3, resultRect3)    
     
 def displayPowerup(score1, count1, score2, count2):
-    if(score1 == 1) and (count1 == 1):
+    if(score1 % 2 == 1) and (count1 % 2 == 1):
         resultSurf4 = BASIC_FONT.render('Speed Boost Available!', True, RED)
         resultRect4 = resultSurf4.get_rect()
         resultRect4.topleft = (350, 50)
         DISPLAY_SURF.blit(resultSurf4, resultRect4)
         
-    if(score2 == 1) and (count2 == 1):
+    if(score2 % 2 == 1) and (count2 % 2 == 1):
         resultSurf5 = BASIC_FONT.render('Speed Boost Available!', True, BLUE)
         resultRect5 = resultSurf5.get_rect()
-        resultRect5.topleft = (WINDOW_WIDTH - 470, 50)
+        resultRect5.topleft = (WINDOW_WIDTH - 570, 50)
         DISPLAY_SURF.blit(resultSurf5, resultRect5)  
 
 
@@ -164,7 +162,6 @@ def reset():
 
 def main():
     pygame.init()
-    
     #Create our controller and frame
     controller = Leap.Controller()
     frame = controller.frame()
@@ -234,7 +231,7 @@ def main():
                             circle = CircleGesture(gesture)
                             
                             # Determine clock direction using the angle between the pointable and the circle normal
-                            if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI/2) and score1 == 1 and count1 == 1:
+                            if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI/2) and score1 % 2 == 1 and count1 % 2 == 1:
                                 print "Left Hand Speed up gesture activated!"                     
                                 speed+=1
                                 print 'Speed', speed
@@ -284,9 +281,10 @@ def main():
             ball.y = WINDOW_HEIGHT/2 - LINE_THICKNESS/2
         displayScore(score1, score2, speed)
         displayPowerup(score1, count1, score2, count2)
-
+        displaySpeed(speed)
 
         pygame.display.update()
 
 if __name__=='__main__':
+        
         main()
