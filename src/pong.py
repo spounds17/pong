@@ -50,6 +50,7 @@ HAND_OFFSET = 150.0
 LEFT_HAND_X_OFFSET = -200.0
 LEFT_HAND_Y_OFFSET = 250.0
 
+
 RIGHT = WINDOW_HEIGHT/HAND_OFFSET * 2
 LEFT = -WINDOW_HEIGHT/HAND_OFFSET * 2
 UP = -WINDOW_HEIGHT/HAND_OFFSET * 2
@@ -89,11 +90,11 @@ def movePaddle(paddle, deltaY, deltaX):
     elif paddle.top < LINE_THICKNESS:
         paddle.top = LINE_THICKNESS
         
-#
+#Draw a white ball
 def drawBall(ball):
     pygame.draw.rect(DISPLAY_SURF, WHITE, ball)
 
-
+#
 def moveBall(ball, xDir, yDir, speed):
     ball.x += math.floor(speed*xDir)
     ball.y += math.floor(speed*yDir)
@@ -101,8 +102,10 @@ def moveBall(ball, xDir, yDir, speed):
 
 
 def checkEdgeCollision(ball, ballDirX, ballDirY):
+    #Check top and bottom collisions, if one exists, change the direction using multiplication of -1
     if ball.top <= (LINE_THICKNESS) or ball.bottom >= (WINDOW_HEIGHT - LINE_THICKNESS):
         ballDirY *= (-1)
+    #Check top and bottom collisions, if one exists, change the direction using multiplication of -1
     if ball.left <= (LINE_THICKNESS) or ball.right >= (WINDOW_WIDTH - LINE_THICKNESS):
         ballDirX *= (-1)
     return ballDirX, ballDirY
@@ -115,12 +118,15 @@ def checkHitBall(ball, paddle1, paddle2, ballDirX):
         return -1
     return 1
 
-
+#A point is scored when the ball touches the edge of the frame
 def checkPointScored(ball, score1, score2, ballDirX):
+    #Player 2 has scored
     if ball.left <= LINE_THICKNESS:
         return 2
+    #Player 1 has scored
     elif ball.right >= WINDOW_WIDTH - LINE_THICKNESS:
         return 1
+    #No score
     else:
         return 0
 
@@ -206,12 +212,14 @@ def main():
     drawPaddle(playerTwoPaddle, "RED")
     drawBall(ball)
 
-    while True: #main game loop
+    #Main game loop
+    while True: 
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
 
+        #Draw table, paddles, and ball
         drawTable()
         drawPaddle(playerOnePaddle, "RED")
         drawPaddle(playerTwoPaddle, "BLUE")
@@ -220,42 +228,41 @@ def main():
         frame = controller.frame()
         if frame.is_valid:
             displaySpeed(speed)
+            #Determine hands, left hand = player 1, right hand = player 2
             for hand in frame.hands:
                 handType = "Left hand" if hand.is_left else "Right hand"
                 
                 if handType == "Left hand":
-                    #we are player 1
-                    
+                    #we are player 1                    
                     for gesture in frame.gestures():
                         if gesture.type == Leap.Gesture.TYPE_CIRCLE:
-                            circle = CircleGesture(gesture)
-                            
-                            # Determine clock direction using the angle between the pointable and the circle normal
+                            circle = CircleGesture(gesture)                           
+                            #Determine clock direction using the angle between the pointable and the circle normal
+                            #This was taken right from the Sample.py file located in the SDK
                             if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI/2) and score1 % 2 == 1 and count1 % 2 == 1:
                                 print "Left Hand Speed up gesture activated!"                     
                                 speed+=1
                                 print 'Speed', speed
                                 count1 += 1
-                            
+                    #Update position of hand and apply offsets        
                     position = hand.palm_position
                     deltaX = (position.y-LEFT_HAND_Y_OFFSET) 
                     deltaY = (-position.x-LEFT_HAND_X_OFFSET) 
                     movePaddle(playerOnePaddle, deltaX, deltaY)
                     
                 else:
-                    #we are player 2
-                    
+                    #we are player 2                    
                     for gesture in frame.gestures():
                         if gesture.type == Leap.Gesture.TYPE_CIRCLE:
-                            circle = CircleGesture(gesture)
-                                                
-                            # Determine clock direction using the angle between the pointable and the circle normal
+                            circle = CircleGesture(gesture)                                                
+                            #Determine clock direction using the angle between the pointable and the circle normal
+                            #This was taken right from the Sample.py file located in the SDK                            
                             if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI/2) and score2 == 1 and count2 == 1:
                                 print "Right Hand Speed up gesture activated!"                     
                                 speed+=1
                                 print 'Speed', speed
                                 count2 += 1             
-                                
+                    #Update position of hand and apply offsets             
                     position = hand.palm_position
                     deltaY = (position.y-RIGHT_HAND_Y_OFFSET) 
                     deltaX = (-position.x-RIGHT_HAND_X_OFFSET) 
@@ -263,28 +270,31 @@ def main():
 
 
         ball = moveBall(ball, ballDirX, ballDirY, speed)
-
         ballDirX, ballDirY = checkEdgeCollision(ball, ballDirX, ballDirY)
-
         ballDirX = ballDirX * checkHitBall(ball, playerOnePaddle, playerTwoPaddle, ballDirX)
-
-        point = checkPointScored(ball, score1, score2, ballDirX)
+        
+        #Call checkPointScored and store result into the point variable
+        #A point is scored if the ball edge touches the edge of the frame (minus the line thickness)
+        point = checkPointScored(ball, score1, score2, ballDirX)   
+        #If checkPointScored returns 1, then player 1 has scored
         if point == 1:
             score1+=1
             speed = 1.5
             ball.x = WINDOW_WIDTH/2 - LINE_THICKNESS/2
             ball.y = WINDOW_HEIGHT/2 - LINE_THICKNESS/2
+        #If checkPointScored returns 2, then player 2 has scored
         if point == 2:
             score2+=1
             speed = 1.5
             ball.x = WINDOW_WIDTH/2 - LINE_THICKNESS/2
             ball.y = WINDOW_HEIGHT/2 - LINE_THICKNESS/2
+        #Display new scores, powerups, and speed
         displayScore(score1, score2, speed)
         displayPowerup(score1, count1, score2, count2)
         displaySpeed(speed)
-
         pygame.display.update()
 
+#Main function
 if __name__=='__main__':
         
         main()
