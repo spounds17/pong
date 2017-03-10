@@ -1,0 +1,32 @@
+#X64 
+
+from sys import version_info
+if version_info >= (2, 6, 0):
+    def swig_import_helper():
+        from os.path import dirname
+        import imp
+        fp = None
+        try:
+            fp, pathname, description = imp.find_module('LeapPython', [dirname(__file__)])
+        except ImportError:
+            import LeapPython
+            return LeapPython
+        if fp is not None:
+            try:
+                _mod = imp.load_module('LeapPython', fp, pathname, description)
+            finally:
+                fp.close()
+            return _mod
+    LeapPython = swig_import_helper()
+    del swig_import_helper
+else:
+    import LeapPython
+del version_info
+try:
+    _swig_property = property
+except NameError:
+    pass  # Python < 2.2 doesn't have 'property'.
+
+
+def _swig_setattr_nondynamic(self, class_type, name, value, static=1):
+    if (name == "thisown"):
